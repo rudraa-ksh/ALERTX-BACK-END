@@ -1,5 +1,7 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore} from 'firebase/firestore';
+import { initializeApp } from 'firebase-admin/app';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const firebaseConfig = {
     apiKey: process.env.apiKey,
@@ -13,9 +15,8 @@ const firebaseConfig = {
 export async function connectDB(){
     try {
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         console.log("Database Connected");
     } catch (error) {
         console.log("Failed connecting to database",{message:error.message});
     }
-}
+};
