@@ -1,9 +1,9 @@
 import express from "express";
-import {connectDB} from "./config/Connection.js"
+import {connectDB} from "../config/Connection.js"
 import dotenv from 'dotenv';
 import bodyParser from "body-parser";
 
-import authRoutes from "./routes/auth.js";
+import authRoutes from "../routes/auth.js";
 
 dotenv.config();
 const app = express();
