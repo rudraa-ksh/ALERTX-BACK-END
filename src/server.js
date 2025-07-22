@@ -1,9 +1,9 @@
 import express from "express";
-import {connectDB} from "../config/Connection.js"
+import {connectDB} from "./config/Connection.js"
 import dotenv from 'dotenv';
 import bodyParser from "body-parser";
 
-import authRoutes from "../routes/auth.js";
+import disasterRoutes from "./routes/disaster.js";
 
 dotenv.config();
 const app = express();
@@ -13,7 +13,7 @@ connectDB();
 app.use(express.json())
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use("/auth",authRoutes);
+app.use("/disaster",disasterRoutes);
 
 app.get('/', (req, res) => {
     res.send('Hello World!')
