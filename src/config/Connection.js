@@ -1,25 +1,20 @@
 import { cert, initializeApp } from 'firebase-admin/app';
-// import dotenv from 'dotenv';
+import {getFirestore} from 'firebase-admin/firestore';
 import config from "./serviceAccountKey.json" assert {type:"json"};
 
-// dotenv.config();
-
-// const firebaseConfig = {
-//     apiKey: process.env.apiKey,
-//     authDomain:process.env.authDomain,
-//     projectId:process.env.projectId,
-//     storageBucket:process.env.storageBucket,
-//     messagingSenderId:process.env.messagingSenderId,
-//     appId: process.env.appId,
-// };
+let db;
 
 export async function connectDB(){
+    
     try {
-        const app = initializeApp({
+        initializeApp({
             credential: cert(config)
         });
+        db = getFirestore();
         console.log("Database Connected");
     } catch (error) {
         console.log("Failed connecting to database",{message:error.message});
     }
 };
+
+export {db};
