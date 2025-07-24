@@ -1,10 +1,13 @@
 import express from "express";
-import {connectDB} from "./config/Connection.js"
-import userRoutes from "./routes/Users.js"
+import {connectDB} from "./config/Connection.js";
+import dotenv from 'dotenv';
+import userRoutes from "./routes/Users.js";
 import bodyParser from "body-parser";
 
 try {
     const app = express();
+
+    dotenv.config()
 
     app.use(express.json())
     app.use(bodyParser.urlencoded({ extended: true }));
@@ -19,7 +22,7 @@ try {
 
     connectDB();
 
-    const PORT = process.env.port | 3000;
+    const PORT = process.env.port;
     app.listen(PORT,() => console.log(`Server running on port ${PORT}`));
 } catch (error) {
     console.log(error.message);
