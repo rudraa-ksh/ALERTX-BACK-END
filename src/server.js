@@ -3,6 +3,7 @@ import {connectDB} from "./config/Connection.js";
 import dotenv from 'dotenv';
 import userRoutes from "./routes/Users.js";
 import bodyParser from "body-parser";
+import checkDisasters from "./jobs/disasterjob.js";
 
 try {
     const app = express();
@@ -21,6 +22,8 @@ try {
     })
 
     connectDB();
+
+    checkDisasters()
 
     const PORT = process.env.port;
     app.listen(PORT,() => console.log(`Server running on port ${PORT}`));
