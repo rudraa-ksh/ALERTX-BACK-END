@@ -53,7 +53,7 @@ async function addAllActiveDisasters(active) {
 }
 
 async function deleteAllCurrentDisasters(toDelete) {
-    updateUserStatus(toDelete);
+    await updateUserStatus(toDelete);
     const batch = db.batch();
     toDelete.forEach(disaster => {
         const ref = db.collection("Disasters").doc(disaster.id);
@@ -63,12 +63,20 @@ async function deleteAllCurrentDisasters(toDelete) {
 }
 
 async function updateUserStatus(disasters) {
-    for( const disaster of disasters) {
-        const ref = await db.collection("Users").where('disaster', '==','DS15').get()
-        ref.forEach((doc) => {
-            const userRef = db.collection("Users").doc(doc.id);
-            userRef.update({disaster:"SAFE"})
-        });
+    try {
+        for( const disaster of disasters) {
+            const ref = await db.collection("Users").where('disaster', '==', disaster.id).get()
+            if(!ref.docs.length){
+                continue;
+            }else{
+                ref.forEach((doc) => {
+                    const userRef = db.collection("Users").doc(doc.id);
+                    userRef.update({disaster:"SAFE"})
+                });
+            }
+        }
+    } catch (error) {
+        throw new Error(`Error updating user status: ${error}`)
     }
 }
 
@@ -98,7 +106,7 @@ async function alertUsers(disasters) {
     }
 }
 
-export default async function syncActiveDisaster() {
+async function syncActiveDisaster() {
     try {
         const activeDisasters = await getActiveDisasters();
         const currentDisasters = await getCurrentDisasters();
@@ -112,17 +120,17 @@ export default async function syncActiveDisaster() {
             await addAllActiveDisasters(toAdd);
             await deleteAllCurrentDisasters(toDelete);
             console.log("Compare operation performed, Sync completed")
+        }else if(activeDisasters.length === 0 && currentDisasters.length === 0){
+            console.log("No operations performed, Sync completed");
         }else if(!activeDisasters.length){
             await deleteAllCurrentDisasters(currentDisasters)
             console.log("Only delete operation performed, Sync completed")
-        }else if(activeDisasters.length === currentDisasters.length === 0){
-            console.log("No operations performed, Sync completed");
         }else{
             await addAllActiveDisasters(activeDisasters);
             console.log("Only add operations performed, Sync completed");
         }
     } catch (error) {
-        console.error(error.message);
+        console.error(error.message)
     }
 }
 
@@ -135,6 +143,7 @@ async function findUsersNear(lat, lng, range) {
 
     for (const b of bounds) {
         const q = db.collection('Users')
+            .where('disaster', '==', 'SAFE')
             .orderBy('geohash')
             .startAt(b[0])
             .endAt(b[1]);
@@ -160,3 +169,5 @@ async function findUsersNear(lat, lng, range) {
     }
     return matchingDocs;
 }
+
+export {updateUserStatus, syncActiveDisaster}
