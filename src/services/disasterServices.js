@@ -53,13 +53,23 @@ async function addAllActiveDisasters(active) {
 }
 
 async function deleteAllCurrentDisasters(toDelete) {
-
+    updateUserStatus(toDelete);
     const batch = db.batch();
     toDelete.forEach(disaster => {
         const ref = db.collection("Disasters").doc(disaster.id);
         batch.delete(ref);
     });
     await batch.commit();
+}
+
+async function updateUserStatus(disasters) {
+    for( const disaster of disasters) {
+        const ref = await db.collection("Users").where('disaster', '==','DS15').get()
+        ref.forEach((doc) => {
+            const userRef = db.collection("Users").doc(doc.id);
+            userRef.update({disaster:"SAFE"})
+        });
+    }
 }
 
 
