@@ -27,6 +27,16 @@ async function getCurrentDisasters(){
     }
 }
 
+async function getDisasterInfo(id) {
+    const cityRef = db.collection('Disasters').doc(id);
+    const doc = await cityRef.get();
+    if (!doc.exists) {
+        console.log('No such document!');
+    } else {
+        console.log('Document data:', doc.data());
+    }
+}
+
 async function addAllActiveDisasters(active) {
     try {
         await alertUsers(active);
@@ -34,9 +44,11 @@ async function addAllActiveDisasters(active) {
         const disastersWithPrecautions = await Promise.all(
             active.map(async (disaster) => {
                 const response = await generatePrecautions(disaster.disasterType);
+                const desc = await generateDescription(disaster.disasterType);
                 return {
                     ...disaster,
-                    precautions: response
+                    precautions: response,
+                    description: desc
                 };
             })
         );
@@ -86,11 +98,24 @@ async function generatePrecautions(disasterType) {
         const ai = new GoogleGenAI({apiKey:process.env.GEMINI_KEY});
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `Give short precautions for ${disasterType} No headings, under 20 words each.`,
+            contents: `List 4-5 main precaution to be followed in a ${disasterType} disaster each containing 10-15 words max in form of bullteet list, directly give output no extra words or sentence.`,
         })
         return response.text;
     } catch (error) {
         throw new Error(`Error generating precautions: ${error.message}`);
+    }
+}
+
+async function generateDescription(disasterType) {
+    try {
+        const ai = new GoogleGenAI({apiKey:process.env.GEMINI_KEY});
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `Give short single sentence alert descrtption for ${disasterType} disaster for nearby users under 10-15 words, directly give output no extra words or sentence.`,
+        })
+        return response.text;
+    } catch (error) {
+        throw new Error(`Error generating description: ${error.message}`);
     }
 }
 
@@ -170,4 +195,4 @@ async function findUsersNear(lat, lng, range) {
     return matchingDocs;
 }
 
-export {updateUserStatus, syncActiveDisaster}
+export {updateUserStatus, syncActiveDisaster, getDisasterInfo}

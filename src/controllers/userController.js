@@ -1,7 +1,6 @@
-import {db} from "../config/Connection.js"
-import {check} from "../services/userServices.js";
+import {check, checkNew} from "../services/userServices.js";
 
-export async function checkUser(req,res){
+async function checkUser(req,res){
     try {
         const userID = req.body.userid;
         const status = await check(userID);
@@ -10,3 +9,17 @@ export async function checkUser(req,res){
         return res.status(404).json({message:error.message});
     }
 }
+
+async function checkNewUser(req, res) {
+    try {
+        const lat = parseFloat(req.body.latitude);
+        const long = parseFloat(req.body.longitude);
+        const userID = req.body.userid;
+        const status = await checkNew(lat, long, userID);
+        return res.status(200).json({status:status});
+    } catch (error) {
+        return res.status(404).json({message:error.message});
+    }
+}
+
+export {checkUser, checkNewUser};
