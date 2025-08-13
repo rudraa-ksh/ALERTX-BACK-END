@@ -2,6 +2,7 @@ import express from "express";
 import {connectDB} from "./config/Connection.js";
 import dotenv from 'dotenv';
 import userRoutes from "./routes/Users.js";
+import disasterRoutes from "./routes/Disaster.js"
 import bodyParser from "body-parser";
 import checkDisasters from "./jobs/disasterjob.js";
 
@@ -15,7 +16,7 @@ try {
 
     const apiVersion = "/api/v1/";
 
-    app.use(apiVersion+"User", userRoutes);
+    app.use(apiVersion+"User", userRoutes, disasterRoutes);
 
     app.get('/', (req, res) => {
         res.send('Hello World!')

@@ -27,13 +27,34 @@ async function getCurrentDisasters(){
     }
 }
 
+async function getAllDisasters() {
+    try {
+        const snapshot = await db.collection("Disasters").get()
+        let disasters = []
+        for( const doc of snapshot.docs){
+            const data = doc.data()
+            disasters.push({
+                id:data.id,
+                type:data.disasterType,
+                location:{
+                    lat: data.latitude,
+                    long:data.longitude
+                }
+            })
+        }
+        return disasters
+    } catch (error) {
+        throw new Error(`Error fetching all disasters: ${error.message}`);
+    }
+}
+
 async function getDisasterInfo(id) {
     const cityRef = db.collection('Disasters').doc(id);
     const doc = await cityRef.get();
     if (!doc.exists) {
-        console.log('No such document!');
+        return "No such document found";
     } else {
-        console.log('Document data:', doc.data());
+        return doc.data();
     }
 }
 
@@ -195,4 +216,4 @@ async function findUsersNear(lat, lng, range) {
     return matchingDocs;
 }
 
-export {updateUserStatus, syncActiveDisaster, getDisasterInfo}
+export {updateUserStatus, syncActiveDisaster, getDisasterInfo, getAllDisasters}
