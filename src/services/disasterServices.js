@@ -60,8 +60,6 @@ async function getDisasterInfo(id) {
 
 async function addAllActiveDisasters(active) {
     try {
-        await alertUsers(active);
-
         const disastersWithPrecautions = await Promise.all(
             active.map(async (disaster) => {
                 const response = await generatePrecautions(disaster.disasterType);
@@ -73,6 +71,7 @@ async function addAllActiveDisasters(active) {
                 };
             })
         );
+        await alertUsers(disastersWithPrecautions);
         const batch = db.batch();
         disastersWithPrecautions.forEach(disaster =>{
             const ref = db.collection("Disasters").doc(disaster.id);
@@ -147,7 +146,26 @@ async function alertUsers(disasters) {
         for(const user of unsafeUsers){
             const ref = db.collection("Users").doc(user.id);
             await ref.update({disaster:disaster.id})
-            //send push notification
+            let title;
+            if(disaster.id.includes("H")){
+                title = "High Alert"
+            }else{
+                title = "Alert"
+            }
+            const registrationToken = 'YOUR_REGISTRATION_TOKEN';
+            const message = {
+                notification: {
+                    Title: title,
+                    body: disaster.description
+                },
+                token: registrationToken
+            };
+            getMessaging().send(message).then((response) => {
+                console.log('Successfully sent message:', response);
+            })
+            .catch((error) => {
+                console.log('Error sending message:', error);
+            });
         }
     }
 }
