@@ -41,4 +41,29 @@ async function checkNew(lat,long, userID){
     };
 }
 
-export {check, checkNew};
+async function register(userID, fname, lname, lat, long) {
+    const batch = db.batch();
+    const ref = db.collection("Users").doc(userID);
+    batch.set(ref, {
+        FName:fname,
+        LName: lname,
+        Location:[lat, long],
+        geoHash: geohashForLocation([lat, long])
+    })
+    await batch.commit();
+}
+
+async function update(userID, lat, long) {
+    const ref = db.collection("Users").doc(userID);
+    ref.update({
+        Location : [lat, long],
+        geoHash: geohashForLocation([lat, long])
+    }).then(() => {
+        return "Locationupdated successfully"
+    })
+    .catch((error) => {
+        return `Error updating location ${error.message}`
+    });
+}
+
+export {check, checkNew, register, update};
