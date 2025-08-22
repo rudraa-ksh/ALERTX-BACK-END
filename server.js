@@ -1,10 +1,10 @@
 import express from "express";
-import {connectDB} from "./config/Connection.js";
+import {connectDB} from "./src/config/Connection.js";
 import dotenv from 'dotenv';
-import userRoutes from "./routes/Users.js";
-import disasterRoutes from "./routes/Disaster.js"
+import userRoutes from "./src/routes/Users.js";
+import disasterRoutes from "./src/routes/Disaster.js"
 import bodyParser from "body-parser";
-import checkDisasters from "./jobs/disasterjob.js";
+import checkDisasters from "./src/jobs/disasterjob.js";
 
 try {
     const app = express();
@@ -26,8 +26,7 @@ try {
 
     checkDisasters()
 
-    const PORT = process.env.port;
-    app.listen(PORT,() => console.log(`Server running on port ${PORT}`));
+    app.listen(3000,() => console.log(`Server running on port 3000`));
 } catch (error) {
     console.log(error.message);
 }
