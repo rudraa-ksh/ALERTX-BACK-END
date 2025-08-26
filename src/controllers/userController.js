@@ -29,7 +29,7 @@ async function checkNewUser(req, res) {
                 const long = parseFloat(req.body.long);
                 const userID = decodedToken.uid;
                 const status = await checkNew(lat, long, userID);
-                return res.status(200).json({status:status});
+                return res.status(200).json(status);
             }
         }).catch((error)=>{
             return res.status(404).json({message:error.message});

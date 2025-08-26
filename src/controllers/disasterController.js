@@ -12,8 +12,8 @@ async function disasterInfo(req,res) {
             }else{
                 const id = req.body.id;
                 const response = await getDisasterInfo(id)
-                if(response === "No such document found"){
-                    return res.status(404).json({error:response});
+                if(response === "Disaster not found"){
+                    return res.status(404).json({message:response});
                 }else{
                     return res.status(200).send(response);
                 }

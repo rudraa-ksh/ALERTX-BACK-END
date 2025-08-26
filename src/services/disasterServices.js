@@ -52,7 +52,7 @@ async function getDisasterInfo(id) {
     const cityRef = db.collection('Disasters').doc(id);
     const doc = await cityRef.get();
     if (!doc.exists) {
-        return "No such document found";
+        return "Disaster not found";
     } else {
         return doc.data();
     }

@@ -4,25 +4,17 @@ import {distanceBetween} from 'geofire-common';
 async function check(userID) {
     const userRef = db.collection("Users").doc(userID);
     const userDoc = await userRef.get();
-    if (!userDoc.exists) {
-        return "User document not Found";
-    } else {
-        let status = userDoc.data()["disaster"];
-        if(status !== "SAFE"){
-            const disasterRef = db.collection("Disasters").doc(status);
-            const disasterDoc = await disasterRef.get();
-            if (!disasterDoc.exists) {
-                return "Disaster document not found";
-            } else {
-                const disaster = disasterDoc.data();
-                return {
-                    id:disaster.id,
-                    description: disaster.description
-                };
-            }
-        }else{
-            return status;
-        }
+    let status = userDoc.data()["disaster"];
+    if(status !== "SAFE"){
+        const disasterRef = db.collection("Disasters").doc(status);
+        const disasterDoc = await disasterRef.get();
+        const disaster = disasterDoc.data();
+        return {
+            id:disaster.id,
+            description: disaster.description
+        };
+    }else{
+        return {status: status};
     }
 }
 
@@ -34,9 +26,15 @@ async function checkNew(lat,long, userID){
         if(distanceInKm <= disaster.rangeInKm){
             const ref = db.collection("Users").doc(userID);
             ref.update({disaster:disaster.id})
-            return disaster.id;
+            const disasterRef = db.collection("Disasters").doc(disaster.id);
+            const disasterDoc = await disasterRef.get();
+            const disasterInfo = disasterDoc.data();
+            return {
+                id:disasterInfo.id,
+                description: disasterInfo.description
+            };
         }else{
-            return "SAFE";
+            return {status: "SAFE"};
         }
     };
 }
