@@ -1,23 +1,40 @@
 import { getDisasterInfo, getAllDisasters } from "../services/disasterServices.js";
+import { getAuth } from "firebase-admin/auth";
 
 async function disasterInfo(req,res) {
-    const idtoken = req.headers.authorization.split('Bearer ')[1];
-    getAuth().verifyIdToken(idtoken).then(async (decodedToken)=> {
-        const id = req.body.id;
-        const response = await getDisasterInfo(id)
-        return res.status(200).send(response);
-    }).catch((error)=>{
-        return res.status(404).json({message:error.message});
-    })
+    if(!req.headers.authorization){
+        return res.status(401).send({message:"Unauthorized"})
+    }else{
+        const idtoken = req.headers.authorization.split('Bearer ')[1];
+        getAuth().verifyIdToken(idtoken).then(async ()=> {
+            if(!req.body || !req.body.id){
+                return res.status(400).json({message:"Disaster id not found"})
+            }else{
+                const id = req.body.id;
+                const response = await getDisasterInfo(id)
+                if(response === "No such document found"){
+                    return res.status(404).json({error:response});
+                }else{
+                    return res.status(200).send(response);
+                }
+            }
+        }).catch((error)=>{
+            return res.status(404).json({message:error.message});
+        })
+    }
 }
 async function allDisaster(req,res) {
-    const idtoken = req.headers.authorization.split('Bearer ')[1];
-    getAuth().verifyIdToken(idtoken).then(async (decodedToken)=> {
-        const response = await getAllDisasters()
-        return res.status(200).send(response);
-    }).catch((error)=>{
-        return res.status(404).json({message:error.message});
-    })
+    if(!req.headers.authorization){
+        return res.status(401).send({message:"Unauthorized"})
+    }else{
+        const idtoken = req.headers.authorization.split('Bearer ')[1];
+        getAuth().verifyIdToken(idtoken).then(async ()=> {
+            const response = await getAllDisasters()
+            return res.status(200).send(response);
+        }).catch((error)=>{
+            return res.status(404).json({message:error.message});
+        })
+    }
 }
 
 export {disasterInfo, allDisaster};
