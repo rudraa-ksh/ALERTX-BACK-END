@@ -1,40 +1,27 @@
 import {db} from "../config/Connection.js"
 import {distanceBetween} from 'geofire-common';
+import {fetchDisasters, getDisasterSummary} from "../repositories/disaster.js";
+import {getUserStatus, changeUserStatus} from "../repositories/user.js";
 
 async function check(userID) {
-    const userRef = db.collection("Users").doc(userID);
-    const userDoc = await userRef.get();
-    let status = userDoc.data()["disaster"];
+    let status = await getUserStatus(userID);
     if(status !== "SAFE"){
-        const disasterRef = db.collection("Disasters").doc(status);
-        const disasterDoc = await disasterRef.get();
-        const disaster = disasterDoc.data();
-        return {
-            id:disaster.id,
-            description: disaster.description
-        };
+        return await getDisasterSummary(status);
     }else{
-        return {status: status};
+        return {"status": status};
     }
 }
 
 async function checkNew(lat,long, userID){
-    const snapshot = await db.collection("Disasters").get();
+    const snapshot = await fetchDisasters();
     for(const doc of snapshot.docs){
         const disaster = doc.data()
         const distanceInKm = distanceBetween([disaster.latitude, disaster.longitude], [lat, long]);
         if(distanceInKm <= disaster.rangeInKm){
-            const ref = db.collection("Users").doc(userID);
-            ref.update({disaster:disaster.id})
-            const disasterRef = db.collection("Disasters").doc(disaster.id);
-            const disasterDoc = await disasterRef.get();
-            const disasterInfo = disasterDoc.data();
-            return {
-                id:disasterInfo.id,
-                description: disasterInfo.description
-            };
+            changeUserStatus(userID, disaster.id);
+            return await getDisasterSummary(disaster.id);
         }else{
-            return {status: "SAFE"};
+            return {"status": "SAFE"};
         }
     };
 }

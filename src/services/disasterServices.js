@@ -3,6 +3,8 @@ import {geohashQueryBounds, distanceBetween} from 'geofire-common';
 import {db} from "../config/Connection.js"
 import { GoogleGenAI } from "@google/genai";
 import dotenv from 'dotenv';
+import { fetchDisaster, fetchDisasters } from "../repositories/disaster.js";
+import { getUser, changeUserStatus } from "../repositories/user.js";
 
 dotenv.config()
 
@@ -11,50 +13,19 @@ async function getActiveDisasters() {
         const response = await axios.get(process.env.mockapi);
         return response.data.disasters;
     } catch (error) {
-        throw new Error(`Error fetching active disasters: ${error.message}`);
+        throw new Error(`Error fetching active disasters: ${error}`);
     }
 }
 
 async function getCurrentDisasters(){
     try {
-        const snapshot = await db.collection("Disasters").get();
+        const snapshot = await fetchDisasters();
         return snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
     } catch (error) {
-        throw new Error(`Error fetching current disasters: ${error.message}`);
-    }
-}
-
-async function getAllDisasters() {
-    try {
-        const snapshot = await db.collection("Disasters").get()
-        let disasters = []
-        for( const doc of snapshot.docs){
-            const data = doc.data()
-            disasters.push({
-                id:data.id,
-                type:data.disasterType,
-                location:{
-                    lat: data.latitude,
-                    long:data.longitude
-                }
-            })
-        }
-        return disasters
-    } catch (error) {
-        throw new Error(`Error fetching all disasters: ${error.message}`);
-    }
-}
-
-async function getDisasterInfo(id) {
-    const cityRef = db.collection('Disasters').doc(id);
-    const doc = await cityRef.get();
-    if (!doc.exists) {
-        return "Disaster not found";
-    } else {
-        return doc.data();
+        throw new Error(`Error fetching current disasters: ${error}`);
     }
 }
 
@@ -74,44 +45,14 @@ async function addAllActiveDisasters(active) {
         await alertUsers(disastersWithPrecautions);
         const batch = db.batch();
         disastersWithPrecautions.forEach(disaster =>{
-            const ref = db.collection("Disasters").doc(disaster.id);
+            const ref = fetchDisaster(disaster.id);
             batch.set(ref, disaster);
         })
         await batch.commit();
-
     } catch (error) {
         throw new Error(`Error adding active disasters: ${error}`);
     }
 }
-
-async function deleteAllCurrentDisasters(toDelete) {
-    await updateUserStatus(toDelete);
-    const batch = db.batch();
-    toDelete.forEach(disaster => {
-        const ref = db.collection("Disasters").doc(disaster.id);
-        batch.delete(ref);
-    });
-    await batch.commit();
-}
-
-async function updateUserStatus(disasters) {
-    try {
-        for( const disaster of disasters) {
-            const ref = await db.collection("Users").where('disaster', '==', disaster.id).get()
-            if(!ref.docs.length){
-                continue;
-            }else{
-                ref.forEach((doc) => {
-                    const userRef = db.collection("Users").doc(doc.id);
-                    userRef.update({disaster:"SAFE"})
-                });
-            }
-        }
-    } catch (error) {
-        throw new Error(`Error updating user status: ${error}`)
-    }
-}
-
 
 async function generatePrecautions(disasterType) {
     try {
@@ -140,11 +81,11 @@ async function generateDescription(disasterType) {
 }
 
 async function alertUsers(disasters) {
-    for (const disaster of disasters){
+    try {
+        for (const disaster of disasters){
         const unsafeUsers = await findUsersNear(disaster.latitude, disaster.longitude, disaster.rangeInKm);
-
         for(const user of unsafeUsers){
-            const ref = db.collection("Users").doc(user.id);
+            const ref = getUser(user.id);
             await ref.update({disaster:disaster.id})
             let title;
             if(disaster.id.includes("H")){
@@ -164,9 +105,83 @@ async function alertUsers(disasters) {
                 console.log('Successfully sent message:', response);
             })
             .catch((error) => {
-                console.log('Error sending message:', error);
+                throw new Error(`Error adding active disasters: ${error}`);
             });
         }
+    }
+    } catch (error) {
+        throw new Error(`Error alerting user: ${error}`);
+    }
+}
+
+async function findUsersNear(lat, lng, range) {
+    try {
+        const center = [lat, lng];
+        const radiusInM = range / 1000;
+
+        const bounds = geohashQueryBounds(center, radiusInM);
+        const promises = [];
+
+        for (const b of bounds) {
+            const q = db.collection('Users')
+                .where('disaster', '==', 'SAFE')
+                .orderBy('geohash')
+                .startAt(b[0])
+                .endAt(b[1]);
+            promises.push(q.get());
+        }
+
+        const snapshots = await Promise.all(promises);
+
+        const matchingDocs = [];    
+        for (const snap of snapshots) {
+            for (const doc of snap.docs) {
+                const data = doc.data();
+                const location = data.Location;
+                const lat = location.latitude;
+                const lng = location.longitude;
+                const distanceInKm = distanceBetween([lat, lng], center);
+                const distanceInM = distanceInKm * 1000;
+                if (distanceInM <= radiusInM) {
+                    matchingDocs.push(doc);
+                }
+            }
+        }
+        return matchingDocs;
+    } catch (error) {
+        throw new Error(`Error finding user: ${error}`);
+    }
+}
+
+async function deleteAllCurrentDisasters(toDelete) {
+    try {
+        await updateUserStatus(toDelete);
+        const batch = db.batch();
+        toDelete.forEach(disaster => {
+            const ref = fetchDisaster(disaster.id);
+            batch.delete(ref);
+        });
+        await batch.commit();
+    } catch (error) {
+        throw new Error(`Error deleting disaster: ${error}`);
+    }
+    
+}
+
+async function updateUserStatus(disasters) {
+    try {
+        for( const disaster of disasters) {
+            const ref = await db.collection("Users").where('disaster', '==', disaster.id).get()
+            if(!ref.docs.length){
+                continue;
+            }else{
+                ref.forEach((doc) => {
+                    changeUserStatus(doc.id, "SAFE");
+                });
+            }
+        }
+    } catch (error) {
+        throw new Error(`Error updating user status: ${error}`)
     }
 }
 
@@ -194,44 +209,43 @@ async function syncActiveDisaster() {
             console.log("Only add operations performed, Sync completed");
         }
     } catch (error) {
-        console.error(error.message)
+        console.error(`Sync Failed: ${error.message}`);
     }
 }
 
-async function findUsersNear(lat, lng, range) {
-    const center = [lat, lng];
-    const radiusInM = range / 1000;
-
-    const bounds = geohashQueryBounds(center, radiusInM);
-    const promises = [];
-
-    for (const b of bounds) {
-        const q = db.collection('Users')
-            .where('disaster', '==', 'SAFE')
-            .orderBy('geohash')
-            .startAt(b[0])
-            .endAt(b[1]);
-        promises.push(q.get());
-    }
-
-    const snapshots = await Promise.all(promises);
-
-
-    const matchingDocs = [];    
-    for (const snap of snapshots) {
-        for (const doc of snap.docs) {
-            const data = doc.data();
-            const location = data.Location;
-            const lat = location.latitude;
-            const lng = location.longitude;
-            const distanceInKm = distanceBetween([lat, lng], center);
-            const distanceInM = distanceInKm * 1000;
-            if (distanceInM <= radiusInM) {
-                matchingDocs.push(doc);
-            }
+async function getAllDisasters() {
+    try {
+        const snapshot = await fetchDisasters();
+        let disasters = []
+        for( const doc of snapshot.docs){
+            const data = doc.data()
+            disasters.push({
+                id:data.id,
+                type:data.disasterType,
+                location:{
+                    lat: data.latitude,
+                    long:data.longitude
+                }
+            })
         }
+        return disasters
+    } catch (error) {
+        throw new Error(`Error fetching all disasters: ${error}`);
     }
-    return matchingDocs;
+}
+
+async function getDisasterInfo(id) {
+    try {
+        const cityRef = fetchDisaster(id);
+        const doc = await cityRef.get();
+        if (!doc.exists) {
+            return "Disaster not found";
+        } else {
+            return doc.data();
+        }
+    } catch (error) {
+        throw new Error(`Error fetching disaster info: ${error}`);
+    }
 }
 
 export {updateUserStatus, syncActiveDisaster, getDisasterInfo, getAllDisasters}
