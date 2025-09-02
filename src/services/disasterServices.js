@@ -2,11 +2,12 @@ import axios from "axios";
 import {geohashQueryBounds, distanceBetween} from 'geofire-common';
 import {db} from "../config/Connection.js"
 import { GoogleGenAI } from "@google/genai";
-import dotenv from 'dotenv';
-import { fetchDisaster, fetchDisasters } from "../repositories/disaster.js";
+import dotenv, { parse } from 'dotenv';
+import { fetchDisaster, fetchDisasters, setDisaster } from "../repositories/disaster.js";
 import { getUser, changeUserStatus } from "../repositories/user.js";
 
 dotenv.config()
+let no = 1;
 
 async function getActiveDisasters() {
     try {
@@ -220,12 +221,10 @@ async function getAllDisasters() {
         for( const doc of snapshot.docs){
             const data = doc.data()
             disasters.push({
-                id:data.id,
-                type:data.disasterType,
-                location:{
-                    lat: data.latitude,
-                    long:data.longitude
-                }
+                id:doc.id,
+                type:data.type,
+                latitude: data.latitude,
+                longitude:data.longitude
             })
         }
         return disasters
@@ -248,4 +247,39 @@ async function getDisasterInfo(id) {
     }
 }
 
-export {updateUserStatus, syncActiveDisaster, getDisasterInfo, getAllDisasters}
+async function addDisaster(desc,type, lat, lng, prec, rang, sevr){
+    try {
+        let response = await setDisaster(`A${sevr[0]}${++no}`,{
+            description: desc,
+            type:type,
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lng),
+            precautions: prec,
+            rangeInKm: parseFloat(rang)
+        })
+        return response;
+    } catch (error) {
+        throw new Error(`Error adding disaster: ${error}`);
+    }
+}
+
+async function changeDisaster(id, updates) {
+    try {
+        const ref = fetchDisaster(id);
+        if(updates.rangeInKm){
+                updates.rangeInKm = parseFloat(updates.rangeInKm);
+        }else if(updates.latitude){
+            updates.latitude = parseFloat(updates.latitude);
+        }else if(updates.longitude){
+            updates.longitude = parseFloat(updates.longitude);
+        }
+        const res = await ref.update(updates);
+        if(res){
+            return "Disaster updated successfully";
+        }
+    } catch (error) {
+        throw new Error(`Error updating disaster: ${error}`);
+    }
+}
+
+export {updateUserStatus, syncActiveDisaster, getDisasterInfo, getAllDisasters, addDisaster, changeDisaster}

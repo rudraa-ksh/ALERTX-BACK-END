@@ -5,8 +5,8 @@ async function disasterInfo(req,res) {
     if(!req.headers.authorization){
         return res.status(401).send({message:"Unauthorized"})
     }else{
-        const idtoken = req.headers.authorization.split('Bearer ')[1];
-        getAuth().verifyIdToken(idtoken).then(async ()=> {
+        const idToken = req.headers.authorization.split('Bearer ')[1];
+        getAuth().verifyIdToken(idToken).then(async ()=> {
             if(!req.body || !req.body.id){
                 return res.status(400).json({message:"Disaster id not found"})
             }else{
@@ -27,8 +27,8 @@ async function allDisaster(req,res) {
     if(!req.headers.authorization){
         return res.status(401).send({message:"Unauthorized"})
     }else{
-        const idtoken = req.headers.authorization.split('Bearer ')[1];
-        getAuth().verifyIdToken(idtoken).then(async ()=> {
+        const idToken = req.headers.authorization.split('Bearer ')[1];
+        getAuth().verifyIdToken(idToken).then(async ()=> {
             const response = await getAllDisasters()
             return res.status(200).send(response);
         }).catch((error)=>{

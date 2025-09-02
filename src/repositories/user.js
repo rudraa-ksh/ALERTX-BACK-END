@@ -10,10 +10,10 @@ async function getUserStatus(userID) {
     }
 }
 
-function changeUserStatus(userID, id){
+async function changeUserStatus(userID, id){
     try {
-        const ref = db.collection("Users").doc(userID);
-        ref.update({"disaster":id})
+        const ref = getUser(userID);
+        await ref.update({disaster:id})
     } catch (error) {
         throw new Error(`Error changing user status ${error}`);
     }

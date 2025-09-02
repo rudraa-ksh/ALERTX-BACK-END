@@ -3,8 +3,8 @@ import {distanceBetween} from 'geofire-common';
 import {fetchDisasters, getDisasterSummary} from "../repositories/disaster.js";
 import {getUserStatus, changeUserStatus} from "../repositories/user.js";
 
-async function check(userID) {
-    let status = await getUserStatus(userID);
+async function check(userId) {
+    let status = await getUserStatus(userId);
     if(status !== "SAFE"){
         return await getDisasterSummary(status);
     }else{
@@ -18,8 +18,9 @@ async function checkNew(lat,long, userID){
         const disaster = doc.data()
         const distanceInKm = distanceBetween([disaster.latitude, disaster.longitude], [lat, long]);
         if(distanceInKm <= disaster.rangeInKm){
-            changeUserStatus(userID, disaster.id);
-            return await getDisasterSummary(disaster.id);
+            await changeUserStatus(userID, doc.id);
+            const res =  await getDisasterSummary(doc.id);
+            return res;
         }else{
             return {"status": "SAFE"};
         }

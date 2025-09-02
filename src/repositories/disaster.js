@@ -1,8 +1,9 @@
 import {db} from "../config/Connection.js"
+import { updateDisaster } from "../controllers/adminController.js";
 
 async function getDisasterSummary(did) {
     try {
-        const disasterRef = db.collection("Disasters").doc(did);
+        const disasterRef = fetchDisaster(did);
         const disasterDoc = await disasterRef.get();
         const disasterInfo = disasterDoc.data();
         return {
@@ -30,4 +31,15 @@ function fetchDisaster(id) {
     }
 }
 
-export { getDisasterSummary, fetchDisasters, fetchDisaster };
+async function setDisaster(id,toAdd){
+    try {
+        const res = await db.collection('Disasters').doc(id).set(toAdd);
+        if(res){
+            return "Disaster Added Successfully"
+        }
+    } catch (error) {
+        throw new Error(`Error setting disaster ${error}`);
+    }
+}
+
+export { getDisasterSummary, fetchDisasters, fetchDisaster, setDisaster};
