@@ -7,7 +7,7 @@ async function getDisasterSummary(did) {
         const disasterDoc = await disasterRef.get();
         const disasterInfo = disasterDoc.data();
         return {
-            id:disasterInfo.id,
+            id:disasterDoc.id,
             description: disasterInfo.description
         };
     } catch (error) {
