@@ -6,12 +6,14 @@ import disasterRoutes from "./src/routes/Disaster.js"
 import adminRoutes from "./src/routes/Admin.js"
 import bodyParser from "body-parser";
 import checkDisasters from "./src/jobs/disasterjob.js";
+import morgan from "morgan"
 
 try {
     const app = express();
 
     dotenv.config()
 
+    app.use(morgan("dev"));
     app.use(express.json())
     app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -28,7 +30,8 @@ try {
 
     checkDisasters()
 
-    app.listen(5000,() => console.log(`Server running on port 5000`));
+    const port = process.env.PORT;
+    app.listen(port,() => console.log(`Server running on port ${port}`));
 } catch (error) {
     console.log(error.message);
 }
