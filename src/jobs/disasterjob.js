@@ -2,7 +2,7 @@ import cron from "node-cron";
 import {syncActiveDisaster} from "../services/disasterServices.js";
 
 export default async function checkDisasters(){
-    cron.schedule("40 10,14 * * * ",async ()=>{
+    cron.schedule("50 10,14 * * * ",async ()=>{
         await syncActiveDisaster();
     });
 }
