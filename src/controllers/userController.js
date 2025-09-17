@@ -8,10 +8,14 @@ async function checkUser(req,res){
         const idToken = req.headers.authorization.split('Bearer ')[1];
         getAuth().verifyIdToken(idToken).then(async (decodedToken)=> {
             const userId = decodedToken.uid;
-            const status = await check(userId);
-            return res.status(200).json(status);
+            try {
+                const status = await check(userId);
+                return res.status(200).json(status);
+            } catch (error) {
+                return res.status(500).json({message:error.message});
+            }
         }).catch((error)=>{
-            return res.status(404).json({message:error.message});
+            return res.status(401).send({message:error.message});
         })
     }
 }
@@ -28,11 +32,15 @@ async function checkNewUser(req, res) {
                 const lat = parseFloat(req.body.latitude);
                 const lng = parseFloat(req.body.longitude);
                 const userId = decodedToken.uid;
-                const status = await checkNew(lat, lng, userId);
-                return res.status(200).json(status);
+                try {
+                    const status = await checkNew(lat, lng, userId);
+                    return res.status(200).json(status);
+                } catch (error) {
+                    return res.status(500).json({message:error.message});
+                }
             }
         }).catch((error)=>{
-            return res.status(404).json({message:error.message});
+            return res.status(401).json({message:error.message});
         })
     }
 }
