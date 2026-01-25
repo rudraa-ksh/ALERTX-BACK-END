@@ -28,7 +28,7 @@ app.use(apiVersion+"User", userRoutes, disasterRoutes);
 app.use(apiVersion+"Admin", adminRoutes, disasterRoutes);
 
 app.get('/', (req, res) => {
-    res.send('Hello World!')
+    res.redirect("https://documenter.getpostman.com/view/37637006/2sB3HqJdzQ")
 })
 try{
 
