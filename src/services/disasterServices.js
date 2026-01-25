@@ -2,7 +2,7 @@ import axios from "axios";
 import {geohashQueryBounds, distanceBetween} from 'geofire-common';
 import {db} from "../config/Connection.js"
 import { GoogleGenAI } from "@google/genai";
-import dotenv, { parse } from 'dotenv';
+import dotenv from 'dotenv';
 import { fetchDisaster, fetchDisasters, setDisaster } from "../repositories/disaster.js";
 import { getUser, changeUserStatus } from "../repositories/user.js";
 
@@ -34,16 +34,18 @@ async function addAllActiveDisasters(active) {
     try {
         const disastersWithPrecautions = await Promise.all(
             active.map(async (disaster) => {
-                const response = await generatePrecautions(disaster.disasterType);
-                const desc = await generateDescription(disaster.disasterType);
+                const response = await generatePrecautions(disaster.type);
+                const desc = await generateDescription(disaster.type);
+                const intro = await generateIntroduction(disaster.type);
                 return {
                     ...disaster,
                     precautions: response,
+                    introduction: intro,
                     description: desc
                 };
             })
         );
-        await alertUsers(disastersWithPrecautions);
+        // await alertUsers(disastersWithPrecautions);
         const batch = db.batch();
         disastersWithPrecautions.forEach(disaster =>{
             const ref = fetchDisaster(disaster.id);
@@ -68,12 +70,25 @@ async function generatePrecautions(disasterType) {
     }
 }
 
+async function generateIntroduction(disasterType) {
+    try {
+        const ai = new GoogleGenAI({apiKey:process.env.GEMINI_KEY});
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `Complete this alert template for ${disasterType} disaster. Format: "An alert has been issued for your area due to ${disasterType} which may lead to [add possible risk here]`,
+        })
+        return response.text;
+    } catch (error) {
+        throw new Error(`Error generating description: ${error.message}`);
+    }
+}
+
 async function generateDescription(disasterType) {
     try {
         const ai = new GoogleGenAI({apiKey:process.env.GEMINI_KEY});
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `Give short single sentence alert descrtption for ${disasterType} disaster for nearby users under 10-15 words, directly give output no extra words or sentence.`,
+            contents: `Give short single sentence alert descrtption for ${disasterType} disaster for users under 10-15 words, directly give output no extra words or sentence.`,
         })
         return response.text;
     } catch (error) {
@@ -106,7 +121,7 @@ async function alertUsers(disasters) {
                 console.log('Successfully sent message:', response);
             })
             .catch((error) => {
-                throw new Error(`Error adding active disasters: ${error}`);
+                throw new Error(`Error alerting users: ${error}`);
             });
         }
     }
