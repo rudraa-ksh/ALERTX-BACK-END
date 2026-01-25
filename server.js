@@ -1,37 +1,41 @@
 import express from "express";
 import {connectDB} from "./src/config/Connection.js";
-import dotenv from 'dotenv';
 import userRoutes from "./src/routes/Users.js";
 import disasterRoutes from "./src/routes/Disaster.js"
 import adminRoutes from "./src/routes/Admin.js"
 import bodyParser from "body-parser";
 import checkDisasters from "./src/jobs/disasterjob.js";
 import morgan from "morgan"
+import cors from "cors"
 
-try {
-    const app = express();
+const app = express();
+export default app;
 
-    dotenv.config()
+app.use(morgan("dev"));
+app.use(express.json()) //only allow json data
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"))
 
-    app.use(morgan("dev"));
-    app.use(express.json())
-    app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors({
+    origin: process.env.CORS_ORIGIN,
+    methods: ["GET","POST","PUT","PATCH"],
+    // allowedHeaders
+}))
 
-    const apiVersion = "/api/v1/";
+const apiVersion = "/api/v1/";
 
-    app.use(apiVersion+"User", userRoutes, disasterRoutes);
-    app.use(apiVersion+"Admin", adminRoutes, disasterRoutes);
+app.use(apiVersion+"User", userRoutes, disasterRoutes);
+app.use(apiVersion+"Admin", adminRoutes, disasterRoutes);
 
-    app.get('/', (req, res) => {
-        res.send('Hello World!')
-    })
+app.get('/', (req, res) => {
+    res.send('Hello World!')
+})
+try{
 
     connectDB();
 
     checkDisasters()
 
-    const port = process.env.PORT;
-    app.listen(port,() => console.log(`Server running on port ${port}`));
 } catch (error) {
     console.log(error.message);
 }
