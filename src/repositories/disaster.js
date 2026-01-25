@@ -1,5 +1,4 @@
 import {db} from "../config/Connection.js"
-import { updateDisaster } from "../controllers/adminController.js";
 
 async function getDisasterSummary(did) {
     try {

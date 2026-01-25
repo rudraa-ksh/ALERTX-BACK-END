@@ -1,4 +1,3 @@
-import {db} from "../config/Connection.js"
 import {distanceBetween} from 'geofire-common';
 import {fetchDisasters, getDisasterSummary} from "../repositories/disaster.js";
 import {getUserStatus, changeUserStatus} from "../repositories/user.js";

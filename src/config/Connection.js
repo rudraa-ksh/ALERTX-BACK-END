@@ -1,6 +1,5 @@
 import { cert, initializeApp } from 'firebase-admin/app';
 import {getFirestore} from 'firebase-admin/firestore';
-// import config from "./serviceAccountKey.json" assert {type:"json"};
 import dotenv from 'dotenv';
 
 dotenv.config()
