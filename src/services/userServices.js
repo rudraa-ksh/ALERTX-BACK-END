@@ -4,7 +4,7 @@ import {getUserStatus, changeUserStatus} from "../repositories/user.js";
 
 async function check(userId) {
     let status = await getUserStatus(userId);
-    if(status !== "SAFE"){
+    if(status !== "Safe"){
         return await getDisasterSummary(status);
     }else{
         return {"status": status};
@@ -21,7 +21,7 @@ async function checkNew(lat,long, userID){
             const res =  await getDisasterSummary(doc.id);
             return res;
         }else{
-            return {"status": "SAFE"};
+            return {"status": "Safe"};
         }
     };
 }

@@ -140,7 +140,7 @@ async function findUsersNear(lat, lng, range) {
 
         for (const b of bounds) {
             const q = db.collection('Users')
-                .where('disaster', '==', 'SAFE')
+                .where('disaster', '==', 'Safe')
                 .orderBy('geohash')
                 .startAt(b[0])
                 .endAt(b[1]);
@@ -192,7 +192,7 @@ async function updateUserStatus(disasters) {
                 continue;
             }else{
                 ref.forEach((doc) => {
-                    changeUserStatus(doc.id, "SAFE");
+                    changeUserStatus(doc.id, "Safe");
                 });
             }
         }

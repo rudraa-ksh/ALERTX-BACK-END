@@ -6,7 +6,7 @@ async function getDisasterSummary(did) {
         const disasterDoc = await disasterRef.get();
         const disasterInfo = disasterDoc.data();
         return {
-            status: disasterDoc.id[1]=== 'H' ?"High ALert":"Alert",
+            status: disasterDoc.id[1]=== 'H' ?"High Alert":"Alert",
             id:disasterDoc.id,
             description: disasterInfo.description
         };
